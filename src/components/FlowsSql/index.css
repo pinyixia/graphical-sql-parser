@@ -1,0 +1,35 @@
+.stencil-app {
+  display: flex;
+  padding: 0;
+  font-family: sans-serif;
+
+  .app-stencil {
+    position: relative;
+    width: 200px;
+    height: calc(100vh - 85px);
+    border: 1px solid #f0f0f0;
+  }
+
+  .app-content {
+    flex: 1;
+    height: calc(100vh - 85px);
+    margin-right: 8px;
+    margin-left: 8px;
+    box-shadow: 0 0 10px 1px #e9e9e9;
+  }
+
+  .react-node-table {
+    height: 35px;
+    color: #262626;
+    font-size: 12px;
+    line-height: 35px;
+    text-align: center;
+  }
+
+  .react-node-rule {
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 35px;
+    text-align: center;
+  }
+}
