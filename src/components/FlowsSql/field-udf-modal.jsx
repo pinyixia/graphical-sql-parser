@@ -1,15 +1,22 @@
 import { Modal, Table } from 'antd';
 import { useState, useEffect } from 'react';
 
-const FieldUDFModal = ({ modalOpen, handleModalClose, handleSelectField, sqlSyntaxJSON }) => {
+const FieldUDFModal = ({
+  modalOpen,
+  handleModalClose,
+  handleSelectField,
+  currentUDFFieldList,
+  udfSelectData,
+  targetCellNode
+}) => {
   const [fieldList, setFieldList] = useState([])
-  const [names, setNames] = useState([])
+  const [names, setNames] = useState(udfSelectData[targetCellNode?.id] || [])
 
   useEffect(() => {
-    if (sqlSyntaxJSON['SELECT'] && sqlSyntaxJSON['SELECT'][0] !== '*') {
-      setFieldList(sqlSyntaxJSON['SELECT'])
+    if (currentUDFFieldList) {
+      setFieldList(currentUDFFieldList)
     }
-  }, [JSON.stringify(sqlSyntaxJSON)])
+  }, [currentUDFFieldList])
 
   const columns = [
     {
@@ -19,7 +26,7 @@ const FieldUDFModal = ({ modalOpen, handleModalClose, handleSelectField, sqlSynt
     },
   ];
   const data = fieldList.map((item, index) => ({
-    key: index + 1,
+    key: item,
     name: item,
   }))
 
@@ -31,15 +38,20 @@ const FieldUDFModal = ({ modalOpen, handleModalClose, handleSelectField, sqlSynt
     getCheckboxProps: (record) => ({
       name: record.name,
     }),
+    selectedRowKeys: [...names]
   };
 
   return (
     <Modal
       title="UDF函数处理选择"
       open={modalOpen}
-      onOk={() => handleSelectField(names)}
+      onOk={() => {
+        udfSelectData[targetCellNode?.id] = names
+        handleSelectField(udfSelectData)
+      }}
       onCancel={handleModalClose}
       maskClosable={false}
+      destroyOnClose
     >
       <Table
         rowSelection={{

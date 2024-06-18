@@ -32,3 +32,18 @@ export const RuleSyntax = (source, target, sqlSyntax) => {
 export const SQLSyntaxError = (source, target, sqlSyntax) => {
 
 }
+
+// 根据节点id获取对应的关系边对象
+export const getEdgeObj = (graph, cellId, direction = 'target') => {
+  const edges = graph.getEdges();
+  const connectedEdges = edges.filter(edge => {
+    const source = edge.getSourceCellId();
+    const target = edge.getTargetCellId();
+    if (direction === 'source') {
+      return source === cellId;
+    } else {
+      return target === cellId;
+    }
+  });
+  return connectedEdges
+}

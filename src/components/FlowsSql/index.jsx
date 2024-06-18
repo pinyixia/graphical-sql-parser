@@ -10,7 +10,7 @@ import { LockOutlined, UserOutlined, CodeOutlined, SaveOutlined } from '@ant-des
 import FieldConfig from './field-config'
 import { handleRuleList } from "./rule-node";
 import { handleTableList } from "./table-node";
-import { SQLJSON, RuleSyntax } from "@/util/util";
+import { SQLJSON, RuleSyntax, getEdgeObj } from "@/util/util";
 import FieldModal from "./field-modal";
 import FieldRuleModal from "./field-rule-modal";
 import FieldUDFModal from "./field-udf-modal";
@@ -30,7 +30,9 @@ export default class Example extends React.Component {
     isRuleModalOpen: false,
     isUDFModalOpen: false,
     ruleFormData: {},
-    selectBakFields: {}
+    selectBakFields: {},
+    currentUDFFieldList: [],
+    udfSelectData: {},
   }
   sourceCellNode = null
   targetCellNode = null
@@ -188,27 +190,30 @@ export default class Example extends React.Component {
     })
     // 双击表事件
     graph.on('cell:dblclick', (node) => {
+      const { selectBakFields } = this.state
       const { cell } = node
       const cellData = cell.getData() || {}
-      const edges = graph.getEdges();
-      // 过滤出与给定节点 ID 连接的边
-      const connectedEdges = edges.filter(edge => {
-        const source = edge.getSourceCellId();
-        const target = edge.getTargetCellId();
-        return target === cell.id;
-      })[0] || {};
-      this.sourceCellNode = connectedEdges?.getSourceCell()
-      this.targetCellNode = cell
+
       if (!cellData?.relation) {
         message.error('请连接源数据')
         return
       }
+      // 过滤出与给定节点 ID 连接的边
+      const connectedEdges = getEdgeObj(graph, cell.id, 'target')[0] || {}
+      this.sourceCellNode = connectedEdges?.getSourceCell()
+      this.targetCellNode = cell
+
       if (cellData?.type === 'table') {
         this.handleModalOpen()
       } else if (cellData?.type === 'rule' && cellData?.component === 'input') {
         this.handleRuleModalOpen()
       } else if (cellData?.type === 'udf') {
-        this.handleUDFModalOpen()
+        const connectedEdges = getEdgeObj(graph, cell?.id, 'target')[0] || {}
+        const sourceCellNode = connectedEdges?.getSourceCell()
+        const _fieldList = selectBakFields[sourceCellNode?.id] || [];
+        this.setState({ currentUDFFieldList: _fieldList }, () => {
+          this.handleUDFModalOpen()
+        })
       }
     })
     // 删除表事件
@@ -235,6 +240,7 @@ export default class Example extends React.Component {
         if (
           sourceData?.type === 'rule' && currentData?.type === 'table'
           || (sourceData?.type === 'table' && currentData?.type === 'rule' && Object.keys(sqlSyntax).includes('SELECT'))
+          || sourceData?.type === 'table' && currentData?.type === 'udf'
         ) {
           // 处理JSON格式SQL
           const newSqlSyntax = SQLJSON(sourceData, currentData, sqlSyntax)
@@ -397,10 +403,43 @@ export default class Example extends React.Component {
     this.setState(p => ({ refresh: !p.refresh }))
   }
 
+  handleUDFFunction = (udfCell, id) => {
+    const { sqlSyntax, udfSelectData, selectBakFields } = this.state
+    const { name } = udfCell.getData()
+    if (udfSelectData[udfCell.id]) {
+      const newBakFields = selectBakFields[id].filter(item => !udfSelectData[udfCell.id].includes(item))
+      const funObj = { [name]: udfSelectData[udfCell.id] }
+      // sqlSyntax['SELECT'] = [...newBakFields, funObj]
+    } else {
+      // sqlSyntax['SELECT'] = selectBakFields[id]
+    }
+    // this.setState({ sqlSyntax })
+  }
+
   handleSelectField = (fields) => {
     const { sqlSyntax, selectBakFields } = this.state
-    sqlSyntax['SELECT'] = fields
-    this.setState({ sqlSyntax, selectBakFields: {} }, () => {
+
+    this.setState({
+      selectBakFields: {
+        ...selectBakFields,
+        [this.targetCellNode?.id]: fields
+      }
+    }, () => {
+      // 过滤出与给定节点 ID 连接的边
+      const connectedEdges = getEdgeObj(graph, this.targetCellNode?.id, 'source');
+      if (connectedEdges.length) {
+        const _TargetCellNode = connectedEdges[0]?.getTargetCell()
+        const { type } = _TargetCellNode.getData()
+        if (type === 'udf') {
+          this.handleUDFFunction(_TargetCellNode, this.targetCellNode?.id)
+        } else {
+          sqlSyntax['SELECT'] = fields
+          this.setState({ sqlSyntax })
+        }
+      } else {
+        sqlSyntax['SELECT'] = fields
+        this.setState({ sqlSyntax })
+      }
       this.handleModalClose()
       this.handleRefresh()
     })
@@ -476,7 +515,13 @@ export default class Example extends React.Component {
   }
 
   handleUDFSelectField = (fields) => {
-    console.log(fields)
+    this.setState({ udfSelectData: { ...fields } }, () => {
+      const connectedEdges = getEdgeObj(graph, this.targetCellNode?.id, 'target');
+      const _SourceCellNode = connectedEdges[0]?.getSourceCell()
+      this.handleUDFFunction(this.targetCellNode, _SourceCellNode?.id)
+      this.handleUDFModalClose()
+      this.handleRefresh()
+    })
   }
 
   render() {
@@ -488,7 +533,9 @@ export default class Example extends React.Component {
       isRuleModalOpen,
       refresh,
       ruleFormData,
-      isUDFModalOpen
+      isUDFModalOpen,
+      currentUDFFieldList,
+      udfSelectData
     } = this.state
 
     return (
@@ -589,8 +636,10 @@ export default class Example extends React.Component {
         <FieldUDFModal
           modalOpen={isUDFModalOpen}
           handleModalClose={this.handleUDFModalClose}
-          sqlSyntaxJSON={sqlSyntax}
           handleSelectField={this.handleUDFSelectField}
+          targetCellNode={this.targetCellNode}
+          currentUDFFieldList={currentUDFFieldList}
+          udfSelectData={udfSelectData}
         />
       </>
     )
