@@ -11,6 +11,10 @@ const ruleContent = [{
   type: 'string'
 },
 {
+  label: 'UNION',
+  type: 'string'
+},
+{
   label: 'AND',
   type: 'string'
 },

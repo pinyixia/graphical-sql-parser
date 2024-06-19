@@ -16,7 +16,6 @@ import FieldRuleModal from "./field-rule-modal";
 import FieldUDFModal from "./field-udf-modal";
 import TableNodeComponent from "./TableNodeComponent";
 import RuleNodeComponent from "./RuleNodeComponent";
-import { stringify } from "@zhengjialux/sql92-json";
 import './index.css'
 
 let graph = null
@@ -34,6 +33,7 @@ export default class Example extends React.Component {
     selectBakFields: {},
     currentUDFFieldList: [],
     udfSelectData: {},
+    otherTables: {}
   }
   sourceCellNode = null
   targetCellNode = null
@@ -242,7 +242,7 @@ export default class Example extends React.Component {
     })
     // 连接线事件
     graph.on('edge:connected', ({ isNew, edge, currentCell }) => {
-      const { sqlSyntax } = this.state
+      const { sqlSyntax, otherTables } = this.state
       if (isNew) {
         const source = edge.getSourceCell()
         this.sourceCellNode = source
@@ -254,7 +254,25 @@ export default class Example extends React.Component {
 
         currentCell.setData({ relation: true })
         const operation = ['<', '>', '=', '<=', '>=', '!=']
-        if (
+        // 简陋的多表查询处理
+        if (currentData?.name === 'device_uuid_table' || sourceData?.name === 'device_uuid_table') {
+          this.setState({
+            'otherTables': {
+              'device_uuid_table': {
+                "SELECT": ['*'],
+                "FROM": ["device_uuid_table"]
+              }
+            }
+          })
+        } else if (sourceData?.content === 'UNION') {
+          // 处理多表JSON格式SQL
+          this.setState({
+            sqlSyntax: {
+              ...sqlSyntax, 'UNION': otherTables['device_uuid_table']
+            }
+          })
+          this.handleRefresh()
+        } else if (
           sourceData?.type === 'rule' && currentData?.type === 'table'
           || (sourceData?.type === 'table' && currentData?.type === 'rule' && Object.keys(sqlSyntax).includes('SELECT'))
           || sourceData?.type === 'table' && currentData?.type === 'udf'
