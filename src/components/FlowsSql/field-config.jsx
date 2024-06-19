@@ -4,7 +4,8 @@ import Editor from '@monaco-editor/react';
 import { format } from 'sql-formatter';
 import { useEffect, useState } from 'react';
 // https://g14n.info/SQL92-JSON/#api
-import { parse, stringify } from 'sql92-json'
+// import { parse, stringify } from 'sql92-json'
+import { stringify } from "@zhengjialux/sql92-json";
 import ClipboardJS from "clipboard";
 
 const colors1 = ['#6253E1', '#04BEFE'];

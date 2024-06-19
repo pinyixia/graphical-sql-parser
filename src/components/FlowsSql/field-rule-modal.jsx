@@ -9,8 +9,7 @@ const FieldRuleModal = ({
   targetCellNode,
   sourceCellNode,
   ruleFormData,
-  updateFormData,
-  graph
+  updateFormData
 }) => {
   const [fieldList, setFieldList] = useState([])
   const targetCellData = targetCellNode?.getData() || {}

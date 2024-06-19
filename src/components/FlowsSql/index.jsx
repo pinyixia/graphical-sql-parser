@@ -16,6 +16,7 @@ import FieldRuleModal from "./field-rule-modal";
 import FieldUDFModal from "./field-udf-modal";
 import TableNodeComponent from "./TableNodeComponent";
 import RuleNodeComponent from "./RuleNodeComponent";
+import { stringify } from "@zhengjialux/sql92-json";
 import './index.css'
 
 let graph = null
@@ -38,6 +39,15 @@ export default class Example extends React.Component {
   targetCellNode = null
 
   componentDidMount() {
+    // console.log(stringify({
+    //   "SELECT": [
+    //     'UDFT',
+    //     { "UDF": ["fsfd", 'xxxx'], "AS": "num" },
+    //     { "COUNT": '*', "AS": "xxxxnum" }
+    //   ],
+    //   "FROM": ["dwh.campaign_dd"],
+    //   "WHERE": ["yyyymmdd", { "=": 20170610 }]
+    // }))
     // #region 生成画板
     graph = new Graph({
       container: this.container,
@@ -218,9 +228,16 @@ export default class Example extends React.Component {
     })
     // 删除表事件
     graph.bindKey('backspace', () => {
+      const { ruleFormData } = this.state
       const cells = graph.getSelectedCells()
       if (cells.length) {
         graph.removeCells(cells)
+        if (ruleFormData[cells[0]?.id]) {
+          delete ruleFormData[cells[0]?.id]
+          this.setState({ ruleFormData: { ...ruleFormData } }, () => {
+            this.handleFieldRule()
+          })
+        }
       }
     })
     // 连接线事件
@@ -411,13 +428,11 @@ export default class Example extends React.Component {
     const { name, type } = udfCell.getData()
     if (udfSelectData[udfCell.id]) {
       const newBakFields = selectBakFields[id].filter(item => !udfSelectData[udfCell.id]['fieldList'].includes(item))
-      const funObj = { [name]: udfSelectData[udfCell.id]['fieldList'] }
+      const funObj = { [name]: udfSelectData[udfCell.id]['fieldList'], 'AS': udfSelectData[udfCell.id]['asName'] }
       if (type === 'fun' || type === 'udf') {
         // 内置函数
-        sqlSyntax['SELECT'] = [...newBakFields, funObj, { 'AS': udfSelectData[udfCell.id]['asName'] }]
-        console.log(JSON.stringify([...newBakFields, funObj, { 'AS': udfSelectData[udfCell.id]['asName'] }]))
+        sqlSyntax['SELECT'] = [...newBakFields, funObj]
       }
-      console.log(JSON.stringify([...newBakFields, funObj, { 'AS': udfSelectData[udfCell.id]['asName'] }]))
     } else {
       sqlSyntax['SELECT'] = selectBakFields[id]
     }
@@ -499,7 +514,13 @@ export default class Example extends React.Component {
       }
     })
 
-    const newSqlSyntax = { ...sqlSyntax, 'WHERE': [...ruleJSON] }
+    const newSqlSyntax = { ...sqlSyntax }
+    if (ruleJSON.length) {
+      newSqlSyntax['WHERE'] = [...ruleJSON]
+    } else {
+      delete newSqlSyntax['WHERE']
+    }
+
     this.setState({
       sqlSyntax: newSqlSyntax
     }, () => {
