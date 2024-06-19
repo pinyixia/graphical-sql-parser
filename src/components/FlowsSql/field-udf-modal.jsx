@@ -1,4 +1,4 @@
-import { Modal, Table } from 'antd';
+import { Input, Modal, Table, message } from 'antd';
 import { useState, useEffect } from 'react';
 
 const FieldUDFModal = ({
@@ -10,7 +10,8 @@ const FieldUDFModal = ({
   targetCellNode
 }) => {
   const [fieldList, setFieldList] = useState([])
-  const [names, setNames] = useState(udfSelectData[targetCellNode?.id] || [])
+  const [names, setNames] = useState(udfSelectData[targetCellNode?.id] ? udfSelectData[targetCellNode?.id]['fieldList'] : [])
+  const [asName, setAsName] = useState(udfSelectData[targetCellNode?.id] ? udfSelectData[targetCellNode?.id]['asName'] : '')
 
   useEffect(() => {
     if (currentUDFFieldList) {
@@ -46,13 +47,20 @@ const FieldUDFModal = ({
       title="UDF函数处理选择"
       open={modalOpen}
       onOk={() => {
-        udfSelectData[targetCellNode?.id] = names
+        if (!asName) {
+          message.error('别名不能为空')
+          return
+        }
+        udfSelectData[targetCellNode?.id] = {}
+        udfSelectData[targetCellNode?.id]['fieldList'] = names
+        udfSelectData[targetCellNode?.id]['asName'] = asName
         handleSelectField(udfSelectData)
       }}
       onCancel={handleModalClose}
       maskClosable={false}
       destroyOnClose
     >
+      别名：<Input value={asName} onChange={({ target: { value } }) => { setAsName(value) }} />
       <Table
         rowSelection={{
           type: 'checkbox',

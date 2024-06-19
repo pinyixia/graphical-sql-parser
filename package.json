@@ -22,13 +22,8 @@
     "@monaco-editor/react": "^4.6.0",
     "antd": "^5.18.1",
     "clipboard": "^2.0.11",
-    "js-sql-parser": "^1.6.0",
-    "json-sql": "^0.5.0",
-    "json-to-sql": "^0.0.2",
     "lodash": "^4.17.21",
     "sql-formatter": "^15.3.1",
-    "sql-json-generator": "^0.15.1",
-    "sql-query-builder": "^0.3.2",
     "sql92-json": "^0.19.2",
     "umi": "^4.2.10"
   },

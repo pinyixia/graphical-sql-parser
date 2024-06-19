@@ -5,7 +5,10 @@ const tableContent = [{
   label: 'device_uuid_table',
   type: 'table'
 }, {
-  label: 'UDF_test',
+  label: 'CONCAT',
+  type: 'fun'
+}, {
+  label: 'UDF_FUN',
   type: 'udf'
 }]
 

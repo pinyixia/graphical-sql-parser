@@ -207,7 +207,7 @@ export default class Example extends React.Component {
         this.handleModalOpen()
       } else if (cellData?.type === 'rule' && cellData?.component === 'input') {
         this.handleRuleModalOpen()
-      } else if (cellData?.type === 'udf') {
+      } else if (cellData?.type === 'udf' || cellData?.type === 'fun') {
         const connectedEdges = getEdgeObj(graph, cell?.id, 'target')[0] || {}
         const sourceCellNode = connectedEdges?.getSourceCell()
         const _fieldList = selectBakFields[sourceCellNode?.id] || [];
@@ -241,6 +241,9 @@ export default class Example extends React.Component {
           sourceData?.type === 'rule' && currentData?.type === 'table'
           || (sourceData?.type === 'table' && currentData?.type === 'rule' && Object.keys(sqlSyntax).includes('SELECT'))
           || sourceData?.type === 'table' && currentData?.type === 'udf'
+          || sourceData?.type === 'table' && currentData?.type === 'fun'
+          || sourceData?.type === 'udf' && currentData?.type === 'rule'
+          || sourceData?.type === 'fun' && currentData?.type === 'rule'
         ) {
           // 处理JSON格式SQL
           const newSqlSyntax = SQLJSON(sourceData, currentData, sqlSyntax)
@@ -405,15 +408,20 @@ export default class Example extends React.Component {
 
   handleUDFFunction = (udfCell, id) => {
     const { sqlSyntax, udfSelectData, selectBakFields } = this.state
-    const { name } = udfCell.getData()
+    const { name, type } = udfCell.getData()
     if (udfSelectData[udfCell.id]) {
-      const newBakFields = selectBakFields[id].filter(item => !udfSelectData[udfCell.id].includes(item))
-      const funObj = { [name]: udfSelectData[udfCell.id] }
-      // sqlSyntax['SELECT'] = [...newBakFields, funObj]
+      const newBakFields = selectBakFields[id].filter(item => !udfSelectData[udfCell.id]['fieldList'].includes(item))
+      const funObj = { [name]: udfSelectData[udfCell.id]['fieldList'] }
+      if (type === 'fun' || type === 'udf') {
+        // 内置函数
+        sqlSyntax['SELECT'] = [...newBakFields, funObj, { 'AS': udfSelectData[udfCell.id]['asName'] }]
+        console.log(JSON.stringify([...newBakFields, funObj, { 'AS': udfSelectData[udfCell.id]['asName'] }]))
+      }
+      console.log(JSON.stringify([...newBakFields, funObj, { 'AS': udfSelectData[udfCell.id]['asName'] }]))
     } else {
-      // sqlSyntax['SELECT'] = selectBakFields[id]
+      sqlSyntax['SELECT'] = selectBakFields[id]
     }
-    // this.setState({ sqlSyntax })
+    this.setState({ sqlSyntax })
   }
 
   handleSelectField = (fields) => {
@@ -430,7 +438,7 @@ export default class Example extends React.Component {
       if (connectedEdges.length) {
         const _TargetCellNode = connectedEdges[0]?.getTargetCell()
         const { type } = _TargetCellNode.getData()
-        if (type === 'udf') {
+        if (type === 'udf' || type === 'fun') {
           this.handleUDFFunction(_TargetCellNode, this.targetCellNode?.id)
         } else {
           sqlSyntax['SELECT'] = fields

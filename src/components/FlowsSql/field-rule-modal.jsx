@@ -17,8 +17,21 @@ const FieldRuleModal = ({
   const sourceCellData = sourceCellNode?.getData() || {}
 
   useEffect(() => {
+    // 条件需要优化
     if (sqlSyntaxJSON['SELECT'] && sqlSyntaxJSON['SELECT'][0] !== '*') {
-      setFieldList(sqlSyntaxJSON['SELECT'])
+      const filterList = []
+      sqlSyntaxJSON['SELECT'].forEach(item => {
+        if (typeof item === 'object') {
+          Object.keys(item).forEach(key => {
+            if (key === 'AS') {
+              filterList.push(item[key])
+            }
+          })
+        } else {
+          filterList.push(item)
+        }
+      })
+      setFieldList(filterList)
     }
   }, [JSON.stringify(sqlSyntaxJSON)])
 
