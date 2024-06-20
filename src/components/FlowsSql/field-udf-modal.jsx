@@ -51,9 +51,11 @@ const FieldUDFModal = ({
           message.error('别名不能为空')
           return
         }
+        const { name } = targetCellNode?.getData()
         udfSelectData[targetCellNode?.id] = {}
         udfSelectData[targetCellNode?.id]['fieldList'] = names
         udfSelectData[targetCellNode?.id]['asName'] = asName
+        udfSelectData[targetCellNode?.id]['udfName'] = name
         handleSelectField(udfSelectData)
       }}
       onCancel={handleModalClose}

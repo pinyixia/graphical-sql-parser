@@ -445,11 +445,16 @@ export default class Example extends React.Component {
     const { sqlSyntax, udfSelectData, selectBakFields } = this.state
     const { name, type } = udfCell.getData()
     if (udfSelectData[udfCell.id]) {
-      const newBakFields = selectBakFields[id].filter(item => !udfSelectData[udfCell.id]['fieldList'].includes(item))
-      const funObj = { [name]: udfSelectData[udfCell.id]['fieldList'], 'AS': udfSelectData[udfCell.id]['asName'] }
+      let udfSelectFields = []
+      const funObj = []
+      for (let key in udfSelectData) {
+        funObj.push({ [udfSelectData[key]['udfName']]: udfSelectData[key]['fieldList'], 'AS': udfSelectData[key]['asName'] })
+        udfSelectFields = [...udfSelectFields, ...udfSelectData[key]['fieldList']]
+      }
+      const newBakFields = selectBakFields[id].filter(item => !udfSelectFields.includes(item))
       if (type === 'fun' || type === 'udf') {
         // 内置函数
-        sqlSyntax['SELECT'] = [...newBakFields, funObj]
+        sqlSyntax['SELECT'] = [...newBakFields, ...funObj]
       }
     } else {
       sqlSyntax['SELECT'] = selectBakFields[id]
